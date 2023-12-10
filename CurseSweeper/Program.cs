@@ -15,7 +15,7 @@ namespace CurseSweeper{
                 #pragma warning disable CA1416 // Validate platform compatibility
                 terminal = new(CursesBackend.Load(), options);
                 #pragma warning restore CA1416 // Validate platform compatibility
-                MinesweeperGame game = new();
+                MinesweeperGame game = new(terminal.Colors);
                 terminal.Repeat(game.Redraw, 100);
                 terminal.Run(game.ProcessEvent);
             }
