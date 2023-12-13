@@ -12,7 +12,7 @@ namespace CurseSweeper{
         public bool GameFinished => GameLost || GameWon;
         public bool GameLost{get;private set;}
         public bool GameWon{get;private set;}
-        public Size Size{get;}
+        public Size Size{get;} //TODO: Size and MineCount can be moved to game options struct
         public int MineCount{get;}
         private int TileCount => Size.Width * Size.Height;
 
@@ -26,7 +26,7 @@ namespace CurseSweeper{
         }
 
         private HashSet<int> GenerateMines(){
-            //TODO: Check that enough mines can actually be generated in the space given
+            //TODO: Check that enough mines can actually be generated in the space given, in game option struct validate method
             //TODO: Store an anyRevealed bool and use it to reroll mine positions if the first revealed is a mine
             Random rand = new();
             HashSet<int> result = new(MineCount);
