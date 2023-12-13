@@ -15,6 +15,8 @@ namespace CurseSweeper{
         public Size Size{get;} //TODO: Size and MineCount can be moved to game options struct
         public int MineCount{get;}
         private int TileCount => Size.Width * Size.Height;
+        public DateTime? StartTime;
+        public DateTime? FinishTime;
 
         public MinesweeperBoard(Size size, int mineCount){
             Size = size;
@@ -141,7 +143,7 @@ namespace CurseSweeper{
                 //Tile already uncovered, check if adjacent mine count is equal to adjacent flag count
                 if(GetAdjacentCount(tilePos) > GetAdjacentFlagCount(tilePos))
                     return;
-                for(int x=-1; x<=1; x++){
+                for(int x=-1; x<=1; x++){ //TODO: This loop is repeated too many times, should make a GetAdjacent(Point) method
                     for(int y=-1; y<=1; y++){
                         Point candPos = new(tilePos.X + x, tilePos.Y + y);
                         if(!ValidateTilePos(candPos))
@@ -159,6 +161,10 @@ namespace CurseSweeper{
                 return;
             }
             coveredTiles[tileIndex] = false;
+            if(!GameStarted){
+                GameStarted = true;
+                StartTime = DateTime.Now;
+            }
             if(GetAdjacentCount(tilePos)==0){
                 Queue<Point> queue = new();
                 HashSet<Point> checkedTiles = new();
@@ -192,10 +198,12 @@ namespace CurseSweeper{
             if(mines.Contains(tileIndex)){
                 //If this tile is a mine, lose the game
                 GameLost = true;
+                FinishTime = DateTime.Now;
                 UncoverAllMines();
             }else if(coveredTiles.Cast<bool>().Count(b => b) == MineCount){
                 //If only mines remain covered, win the game
                 GameWon = true;
+                FinishTime = DateTime.Now;
                 //Flag all mines
                 foreach(int mineIndex in mines){
                     flags.Add(mineIndex);

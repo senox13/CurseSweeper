@@ -4,17 +4,30 @@ using System.Drawing;
 
 namespace CurseSweeper{
     public sealed class MinesweeperGame{
+        private const string HELP_TEXT = "Space to uncover tiles, enter to flag mines";
+        private const int CURSOR_BLINK_MS = 500;
         private const string cursorStr = "X";
         private readonly MinesweeperBoard board;
         private readonly MinesweeperBoardRenderer renderer;
         private StyledText cursorRune = new(cursorStr, Style.Default); //TODO: Cursor will need to blink, can use system time maybe?
         private Point cursorPos = new(0, 0);
+        private DateTime? startTime;
         private IWindow boardWindow = null!;
 
         public MinesweeperGame(IColorManager colors){
             //TODO: Add game options struct?
             board = new MinesweeperBoard(new(10, 10), 10);
             renderer = new MinesweeperBoardRenderer(colors, board);
+        }
+
+        public static TerminalOptions GetTerminalOptions(){
+            return new(
+                ManagedWindows: true,
+                UseColors: true,
+                UseMouse: false,
+                CaretMode: CaretMode.Invisible,
+                AllocateFooter: true
+            );
         }
 
         private Rectangle GetBoardRect(){
@@ -32,18 +45,36 @@ namespace CurseSweeper{
         }
 
         public Task Redraw(Terminal term){
+            //Clear screen
             term.Screen.Clear();
             term.Screen.DrawBorder();
+            term.Footer!.Clear();
             
-            //TODO: Should probably draw to a subwindow, then add back border, with top/bottom bar with timer
+            //Draw board
             boardWindow.Draw(new Point(0, 0), renderer);
 
             //Draw cursor
-            boardWindow.CaretLocation = cursorPos;
-            boardWindow.WriteText(cursorRune);
+            if(!board.GameFinished && DateTime.Now.Millisecond % CURSOR_BLINK_MS > CURSOR_BLINK_MS / 2){
+                boardWindow.CaretLocation = cursorPos;
+                boardWindow.WriteText(cursorRune);
+            }
 
+            //Update footer
+            string footerText;
+            if(!board.GameStarted){
+                //TODO: Make help text a const, add to above string
+                footerText = HELP_TEXT;
+            }else if(board.GameFinished){
+                footerText = $"Time: {(board.FinishTime! - board.StartTime!).Value.Seconds} {HELP_TEXT}";
+            }else{
+                footerText = $"Time: {(DateTime.Now - board.StartTime!).Value.Seconds} {HELP_TEXT}";
+            }
+            term.Footer!.WriteText(footerText);
+
+            //Refresh screen sections
             term.Screen.Refresh();
             boardWindow.Refresh();
+            term.Footer!.Refresh();
             return Task.CompletedTask;
         }
 
@@ -79,6 +110,8 @@ namespace CurseSweeper{
                     board.ToggleFlag(cursorPos);
                     break;
                 case KeyEvent{Key: Key.Character, Char.IsAscii: true, Char.Value: ' ', Modifiers: ModifierKey.None}:
+                    if(!board.GameStarted)
+                        startTime = DateTime.Now;
                     board.UncoverTile(cursorPos);
                     break;
             }

@@ -3,17 +3,11 @@ using Sharpie.Backend;
 
 namespace CurseSweeper{
     internal class Program{
-        private static readonly TerminalOptions options = new(
-            ManagedWindows: true,
-            UseMouse: false,
-            CaretMode: CaretMode.Invisible
-        );
-
         internal static void Main(string[] args){
             Terminal terminal = null!;
             try{
                 #pragma warning disable CA1416 // Validate platform compatibility
-                terminal = new(CursesBackend.Load(), options);
+                terminal = new(CursesBackend.Load(), MinesweeperGame.GetTerminalOptions());
                 #pragma warning restore CA1416 // Validate platform compatibility
                 MinesweeperGame game = new(terminal.Colors);
                 terminal.Repeat(game.Redraw, 100);
