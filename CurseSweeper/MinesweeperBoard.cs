@@ -37,7 +37,6 @@ namespace CurseSweeper{
         }
 
         private int[] UpdateAdjacentCounts(){
-            //DEBUG
             int[] result = new int[TileCount];
             for(int x=0; x<Size.Width; x++){
                 for(int y=0; y<Size.Height; y++){
@@ -99,8 +98,25 @@ namespace CurseSweeper{
             }
             return adjacentCounts[TileIndex(tilePos)];
         }
-
+        
+        public int GetAdjacentFlagCount(Point tilePos){
+            int result = 0;
+            for(int x=-1; x<=1; x++){
+                for(int y=-1; y<=1; y++){
+                    Point candPos = new(tilePos.X + x, tilePos.Y + y);
+                    if(!ValidateTilePos(candPos))
+                        continue;
+                    int candIndex = TileIndex(candPos);
+                    if(flags.Contains(candIndex))
+                            result++;
+                }
+            }
+            return result;
+        }
+        
         public void ToggleFlag(Point tilePos){
+            if(GameFinished)
+                return;
             int tileIndex = TileIndex(tilePos);
             if(!coveredTiles[tileIndex])
                 return;
@@ -122,7 +138,21 @@ namespace CurseSweeper{
             }
             int tileIndex = TileIndex(tilePos);
             if(!coveredTiles[tileIndex]){
-                //Tile already uncovered
+                //Tile already uncovered, check if adjacent mine count is equal to adjacent flag count
+                if(GetAdjacentCount(tilePos) > GetAdjacentFlagCount(tilePos))
+                    return;
+                for(int x=-1; x<=1; x++){
+                    for(int y=-1; y<=1; y++){
+                        Point candPos = new(tilePos.X + x, tilePos.Y + y);
+                        if(!ValidateTilePos(candPos))
+                            continue;
+                        int candIndex = TileIndex(candPos);
+                        if(flags.Contains(candIndex))
+                            continue;
+                        if(coveredTiles[candIndex])
+                            UncoverTile(candPos);
+                    }
+                }
                 return;
             }
             if(flags.Contains(tileIndex)){
@@ -166,6 +196,10 @@ namespace CurseSweeper{
             }else if(coveredTiles.Cast<bool>().Count(b => b) == MineCount){
                 //If only mines remain covered, win the game
                 GameWon = true;
+                //Flag all mines
+                foreach(int mineIndex in mines){
+                    flags.Add(mineIndex);
+                }
             }
         }
     }
