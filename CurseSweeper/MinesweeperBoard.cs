@@ -44,14 +44,9 @@ namespace CurseSweeper{
                 for(int y=0; y<Size.Height; y++){
                     Point tilePos = new(x, y);
                     int count = 0;
-                    for(int xOff=-1; xOff<=1; xOff++){
-                        for(int yOff=-1; yOff<=1; yOff++){
-                            Point adjPos = new(x + xOff, y + yOff);
-                            if(!ValidateTilePos(adjPos))
-                                continue;
-                            if(mines.Contains(TileIndex(adjPos)))
-                                count++;
-                        }
+                    foreach(Point adjPos in GetAdjacent(tilePos)){
+                        if(mines.Contains(TileIndex(adjPos)))
+                            count++;
                     }
                     result[TileIndex(tilePos)] = count;
                 }
@@ -70,7 +65,20 @@ namespace CurseSweeper{
             }
             return true;
         }
-
+        
+        private IEnumerable<Point> GetAdjacent(Point centerPos){
+            for(int x=-1; x<=1; x++){
+                for(int y=-1; y<=1; y++){
+                    Point candPos = new(centerPos.X + x, centerPos.Y + y);
+                    if(!ValidateTilePos(candPos))
+                        continue;
+                    if(candPos == centerPos)
+                        continue;
+                    yield return candPos;
+                }
+            }
+        }
+        
         private void UncoverAllMines(){
             foreach(int mineIndex in mines){
                 coveredTiles[mineIndex] = false;
@@ -103,15 +111,10 @@ namespace CurseSweeper{
         
         public int GetAdjacentFlagCount(Point tilePos){
             int result = 0;
-            for(int x=-1; x<=1; x++){
-                for(int y=-1; y<=1; y++){
-                    Point candPos = new(tilePos.X + x, tilePos.Y + y);
-                    if(!ValidateTilePos(candPos))
-                        continue;
-                    int candIndex = TileIndex(candPos);
-                    if(flags.Contains(candIndex))
-                            result++;
-                }
+            foreach(Point adjPos in GetAdjacent(tilePos)){
+                int adjIndex = TileIndex(adjPos);
+                if(flags.Contains(adjIndex))
+                    result++;
             }
             return result;
         }
@@ -143,17 +146,12 @@ namespace CurseSweeper{
                 //Tile already uncovered, check if adjacent mine count is equal to adjacent flag count
                 if(GetAdjacentCount(tilePos) > GetAdjacentFlagCount(tilePos))
                     return;
-                for(int x=-1; x<=1; x++){ //TODO: This loop is repeated too many times, should make a GetAdjacent(Point) method
-                    for(int y=-1; y<=1; y++){
-                        Point candPos = new(tilePos.X + x, tilePos.Y + y);
-                        if(!ValidateTilePos(candPos))
-                            continue;
-                        int candIndex = TileIndex(candPos);
-                        if(flags.Contains(candIndex))
-                            continue;
-                        if(coveredTiles[candIndex])
-                            UncoverTile(candPos);
-                    }
+                foreach(Point adjPos in GetAdjacent(tilePos)){
+                    int adjIndex = TileIndex(adjPos);
+                    if(flags.Contains(adjIndex))
+                        continue;
+                    if(coveredTiles[adjIndex])
+                        UncoverTile(adjPos);
                 }
                 return;
             }
@@ -172,26 +170,16 @@ namespace CurseSweeper{
                 queue.Enqueue(tilePos);
                 while(queue.Count > 0){
                     Point p = queue.Dequeue();
-                    for(int x=-1; x<=1; x++){
-                        for(int y=-1; y<=1; y++){
-                            Point candPos = new(p.X + x, p.Y + y);
-                            if(!ValidateTilePos(candPos))
-                                continue;
-                            if(checkedTiles.Contains(candPos))
-                                continue;
-                            if(GetAdjacentCount(candPos)==0)
-                                connectedZeroAdjacent.Add(candPos);
-                        }
+                    foreach(Point adjPos in GetAdjacent(p)){
+                        if(checkedTiles.Contains(adjPos))
+                            continue;
+                        if(GetAdjacentCount(adjPos)==0)
+                            connectedZeroAdjacent.Add(adjPos);
                     }
                 }
                 foreach(Point p in connectedZeroAdjacent){
-                    for(int x=-1; x<=1; x++){
-                        for(int y=-1; y<=1; y++){
-                        Point offPos = new(p.X + x, p.Y + y);
-                            if(!ValidateTilePos(offPos))
-                                continue;
-                            UncoverTile(offPos);
-                        }
+                    foreach(Point adjPos in GetAdjacent(p)){
+                        UncoverTile(adjPos);
                     }
                 }
             }
@@ -212,3 +200,4 @@ namespace CurseSweeper{
         }
     }
 }
+
