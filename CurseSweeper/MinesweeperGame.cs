@@ -1,22 +1,20 @@
-﻿using Sharpie;
+﻿using System.Drawing;
+using Sharpie;
 using Sharpie.Abstractions;
-using System.Drawing;
 
 namespace CurseSweeper{
     public sealed class MinesweeperGame{
-        private const string HELP_TEXT = "Space to uncover tiles, enter to flag mines";
+        private const string HELP_TEXT = "Space to uncover tiles, enter to flag mines, r to reset";
         private const int CURSOR_BLINK_MS = 500;
         private const string cursorStr = "X";
-        private readonly MinesweeperBoard board;
-        private readonly MinesweeperBoardRenderer renderer;
-        private StyledText cursorRune = new(cursorStr, Style.Default); //TODO: Cursor will need to blink, can use system time maybe?
+        private MinesweeperBoard board;
+        private MinesweeperBoardRenderer renderer;
+        private StyledText cursorRune = new(cursorStr, Style.Default);
         private Point cursorPos = new(0, 0);
-        private DateTime? startTime;
         private IWindow boardWindow = null!;
 
         public MinesweeperGame(IColorManager colors){
-            //TODO: Add game options struct?
-            board = new MinesweeperBoard(new(10, 10), 10);
+            board = new MinesweeperBoard(Difficulty.EXPERT);
             renderer = new MinesweeperBoardRenderer(colors, board);
         }
 
@@ -62,7 +60,6 @@ namespace CurseSweeper{
             //Update footer
             string footerText;
             if(!board.GameStarted){
-                //TODO: Make help text a const, add to above string
                 footerText = HELP_TEXT;
             }else if(board.GameFinished){
                 footerText = $"Time: {(board.FinishTime! - board.StartTime!).Value.Seconds} {HELP_TEXT}";
@@ -87,9 +84,6 @@ namespace CurseSweeper{
                     boardWindow = term.Screen.Window(GetBoardRect());
                     break;
                 //TODO: Should handle resize event but it never seems to be fired
-                //case KeyEvent{Key: Key.Character} keyEvt: //DEBUG
-                    //lastKeyPress = keyEvt.Char;
-                    //break;
                 case KeyEvent{Key: Key.KeypadUp}:
                     cursorPos.Offset(0, -1);
                     ClampCursorPos();
@@ -106,16 +100,41 @@ namespace CurseSweeper{
                     cursorPos.Offset(1, 0);
                     ClampCursorPos();
                     break;
+                case KeyEvent{Key: Key.Character, Char.IsAscii: true, Char.Value: 'r', Modifiers: ModifierKey.None}:
+                    Difficulty prevDifficulty = board.Difficulty;
+                    board = new MinesweeperBoard(prevDifficulty);
+                    renderer = new MinesweeperBoardRenderer(term.Colors, board);
+                    cursorPos = new(0, 0);
+                    break;
                 case KeyEvent{Key: Key.Character, Char.IsAscii: true, Char.Value: 'M', Modifiers: ModifierKey.Ctrl}:
                     board.ToggleFlag(cursorPos);
                     break;
                 case KeyEvent{Key: Key.Character, Char.IsAscii: true, Char.Value: ' ', Modifiers: ModifierKey.None}:
-                    if(!board.GameStarted)
-                        startTime = DateTime.Now;
                     board.UncoverTile(cursorPos);
                     break;
             }
             return Task.CompletedTask;
+        }
+
+        public readonly struct Difficulty{
+            public static readonly Difficulty BEGINNER = new(9, 9, 10);
+            public static readonly Difficulty INTERMEDIATE = new(16, 16, 40);
+            public static readonly Difficulty EXPERT = new(30, 16, 99);
+
+            public readonly Size BoardSize{get;init;}
+            public readonly int MineCount{get;init;}
+
+            public Difficulty(int width, int height, int mines){
+                BoardSize = new(width, height);
+                MineCount = mines;
+            }
+
+            public void Validate(){
+                if(BoardSize.Width < 0 || BoardSize.Height < 0)
+                    throw new ArgumentException("Board size must be positive on both axes", nameof(BoardSize));
+                if(MineCount >= BoardSize.Width * BoardSize.Height)
+                    throw new ArgumentException("Mine count must be less than board area", nameof(MineCount));
+            }
         }
     }
 }

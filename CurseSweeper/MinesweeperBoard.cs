@@ -8,19 +8,20 @@ namespace CurseSweeper{
         private readonly HashSet<int> flags;
         private readonly int[] adjacentCounts;
 
+        public MinesweeperGame.Difficulty Difficulty{get;}
         public bool GameStarted{get;private set;}
         public bool GameFinished => GameLost || GameWon;
         public bool GameLost{get;private set;}
         public bool GameWon{get;private set;}
-        public Size Size{get;} //TODO: Size and MineCount can be moved to game options struct
-        public int MineCount{get;}
+        public Size Size => Difficulty.BoardSize;
+        public int MineCount => Difficulty.MineCount;
         private int TileCount => Size.Width * Size.Height;
         public DateTime? StartTime;
         public DateTime? FinishTime;
 
-        public MinesweeperBoard(Size size, int mineCount){
-            Size = size;
-            MineCount = mineCount;
+        public MinesweeperBoard(MinesweeperGame.Difficulty difficulty){
+            difficulty.Validate();
+            Difficulty = difficulty;
             coveredTiles = new BitArray(TileCount, true);
             mines = GenerateMines();
             flags = new();
@@ -28,8 +29,7 @@ namespace CurseSweeper{
         }
 
         private HashSet<int> GenerateMines(){
-            //TODO: Check that enough mines can actually be generated in the space given, in game option struct validate method
-            //TODO: Store an anyRevealed bool and use it to reroll mine positions if the first revealed is a mine
+            //TODO: Reroll mine positions if the first revealed is a mine (Would also like to include a game seed, need to reconcile these two things)
             Random rand = new();
             HashSet<int> result = new(MineCount);
             while(result.Count < MineCount){
@@ -166,7 +166,7 @@ namespace CurseSweeper{
             if(GetAdjacentCount(tilePos)==0){
                 Queue<Point> queue = new();
                 HashSet<Point> checkedTiles = new();
-                HashSet<Point> connectedZeroAdjacent = new();
+                HashSet<Point> connectedZeroAdjacent = new(){tilePos};
                 queue.Enqueue(tilePos);
                 while(queue.Count > 0){
                     Point p = queue.Dequeue();
@@ -200,4 +200,3 @@ namespace CurseSweeper{
         }
     }
 }
-
