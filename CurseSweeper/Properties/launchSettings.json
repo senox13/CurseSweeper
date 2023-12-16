@@ -1,0 +1,27 @@
+{
+  "profiles": {
+    "CurseSweeper": {
+      "commandName": "Project"
+    },
+    "Beginner": {
+      "commandName": "Project",
+      "commandLineArgs": "-d beginner"
+    },
+    "Intermediate": {
+      "commandName": "Project",
+      "commandLineArgs": "-d intermediate"
+    },
+    "Expert": {
+      "commandName": "Project",
+      "commandLineArgs": "-d expert"
+    },
+    "Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    },
+    "Custom": {
+      "commandName": "Project",
+      "commandLineArgs": "-w 90 -h 90 -m 10"
+    }
+  }
+}

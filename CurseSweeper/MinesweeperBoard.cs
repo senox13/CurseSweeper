@@ -179,7 +179,7 @@ namespace CurseSweeper{
                 }
                 foreach(Point p in connectedZeroAdjacent){
                     foreach(Point adjPos in GetAdjacent(p)){
-                        UncoverTile(adjPos);
+                        UncoverTile(adjPos); //TODO: Stack overflow possible here, should split this into a public Uncover method, for when player uncovers a tile, and a private version that handles less
                     }
                 }
             }

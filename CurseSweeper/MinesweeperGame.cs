@@ -13,8 +13,8 @@ namespace CurseSweeper{
         private Point cursorPos = new(0, 0);
         private IWindow boardWindow = null!;
 
-        public MinesweeperGame(IColorManager colors){
-            board = new MinesweeperBoard(Difficulty.EXPERT);
+        public MinesweeperGame(IColorManager colors, Difficulty difficulty){
+            board = new MinesweeperBoard(difficulty);
             renderer = new MinesweeperBoardRenderer(colors, board);
         }
 
@@ -120,6 +120,11 @@ namespace CurseSweeper{
             public static readonly Difficulty BEGINNER = new(9, 9, 10);
             public static readonly Difficulty INTERMEDIATE = new(16, 16, 40);
             public static readonly Difficulty EXPERT = new(30, 16, 99);
+            internal static readonly Dictionary<string, Difficulty> BUILTINS = new(){
+                {"beginner", BEGINNER},
+                {"intermediate", INTERMEDIATE},
+                {"expert", EXPERT}
+            };
 
             public readonly Size BoardSize{get;init;}
             public readonly int MineCount{get;init;}
